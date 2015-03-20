@@ -14,20 +14,10 @@ var convert = require('convert-source-map');
 var eachAsync = require('each-async');
 var osTempDir = require('os').tmpdir();
 
+var errorHandler = require('./error-handler')
+
 var File = require('vinyl');
 var Readable = require('stream').Readable;
-
-// remove temp directory and line breaks for more Sass-like logging
-function formatMsg (msg, tempDir) {
-	msg = msg.replace(new RegExp((tempDir) + '/?', 'g'), '');
-	msg = msg.trim();
-	return msg;
-}
-
-// convenience function to create a gulp error
-function newErr (err, opts) {
-	return new gutil.PluginError('gulp-ruby-sass', err, opts);
-}
 
 // for now, source is only a single directory or a single file
 module.exports = function (source, options) {
@@ -91,14 +81,6 @@ module.exports = function (source, options) {
 		command = 'sass';
 	}
 
-	// error handling
-	var matchNoSass = /execvp\(\): No such file or directory|spawn ENOENT/;
-	var msgNoSass = 'Missing the Sass executable. Please install and make available on your PATH.';
-	var matchSassErr = /error\s/;
-	var matchNoBundler = /ERROR: Gem bundler is not installed/;
-	var matchNoGemfile = /Could not locate Gemfile/;
-	var matchNoBundledSass = /bundler: command not found: sass|Could not find gem/;
-
 	// plugin logging
 	if (options.verbose) {
 		gutil.log('gulp-ruby-sass', 'Running command:', command, args.join(' '));
@@ -112,43 +94,43 @@ module.exports = function (source, options) {
 	// sass stdout: successful compile messages
 	// bundler stdout: bundler not installed, no gemfile, correct version of sass not installed
 	sass.stdout.on('data', function (data) {
-		var msg = formatMsg(data, destDir);
-		var isError = [
-			matchSassErr,
-			matchNoBundler,
-			matchNoGemfile,
-			matchNoBundledSass
-		].some(function (match) {
-			return match.test(msg);
-		});
+		// var msg = formatMsg(data, destDir);
+		// var isError = [
+		// 	matchSassErr,
+		// 	matchNoBundler,
+		// 	matchNoGemfile,
+		// 	matchNoBundledSass
+		// ].some(function (match) {
+		// 	return match.test(msg);
+		// });
 
-		if (isError) {
-			stream.emit('error', newErr(msg));
-		} else {
-			gutil.log('gulp-ruby-sass:', msg);
-		}
+		// if (isError) {
+		// 	stream.emit('error', newErr(msg));
+		// } else {
+		// 	gutil.log('gulp-ruby-sass:', msg);
+		// }
 	});
 
 	// sass stderr: warnings, debug statements
 	// bundler stderr: no version of sass installed
 	// spawn stderr: no sass executable
 	sass.stderr.on('data', function (data) {
-		var msg = formatMsg(data, destDir);
+		// var msg = formatMsg(data, destDir);
 
-		if (matchNoBundledSass.test(msg)) {
-			stream.emit('error', newErr(msg));
-		}
-		else if (!matchNoSass.test(msg)) {
-			gutil.log('gulp-ruby-sass:', msg);
-		}
+		// if (matchNoBundledSass.test(msg)) {
+		// 	stream.emit('error', newErr(msg));
+		// }
+		// else if (!matchNoSass.test(msg)) {
+		// 	gutil.log('gulp-ruby-sass:', msg);
+		// }
 	});
 
 	// spawn error: no sass executable
 	sass.on('error', function (err) {
-		if (matchNoSass.test(err)) {
-			err.message = msgNoSass;
-		}
-		stream.emit('error', newErr(err));
+		// if (matchNoSass.test(err)) {
+		// 	err.message = msgNoSass;
+		// }
+		// stream.emit('error', newErr(err));
 	});
 
 	sass.on('close', function (code) {
