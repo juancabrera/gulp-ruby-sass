@@ -12,58 +12,42 @@ function newErr (err, opts) {
 	return new gutil.PluginError('gulp-ruby-sass', err, opts);
 }
 
-var matchNoSass = /execvp\(\): No such file or directory|spawn ENOENT/; // break this into each error for each output
+module.exports =
+	stdout: function (message) {
+		// Errors
+		// Ruby (?)
+		/Could not find gem/
 
-var msgNoSass = 'Missing the Sass executable. Please install and make available on your PATH.';
+		// RVM
+		/ERROR: Gem bundler is not installed, run `gem install bundler` first./
 
-var matchSassErr = /error\s/;
-var matchNoBundler = /ERROR: Gem bundler is not installed/;
-var matchNoGemfile = /Could not locate Gemfile/;
-var matchNoBundledSass = /bundler: command not found: sass|Could not find gem/;
+		// Bundler
+		/Could not locate Gemfile/
 
-// Maybe have two adapters - an incoming one and an outgoing one
-// so one reads the messages and decides which outgoing function to call
-// and the outgoing functions are arranged by source like Sass/bundler
+		// Sass
+		// RWRW Should this be /^error/?
+		/error\s/
 
-// incoming stdout
-  // Errors
-	  // Ruby?: bundlr not installed
-	  // bundlr: no gemfile, no correct version
-		// 	matchSassErr,
-		// 	matchNoBundler,
-		// 	matchNoGemfile,
-		// 	matchNoBundledSass / bundler sass version error
+		// Log to console
+		// if not those ^^, good Sass output
+	}
 
+	stderr: function (message) {
+		// Bundler
+		/bundler: command not found: sass/
 
-  // log to console
-    // good sass logging
+		// node spawn
+		/execvp\(\): No such file or directory|spawn ENOENT/;
+		'Missing the Sass executable. Please install and make available on your PATH.';
 
-// incoming srderr
-  // Errors
-		// bundler: no version of sass installed
-		// spawn: no sass executable
-		// matchNoBundledSass
-		// matchNoSass
+		// Log to console
+		// if not those ^^, Sass warnings, debug statements
+	}
 
-  // log to console
-		// sass: warnings, debug statements
+	err: function (message) {
+		// node spawn
+		/execvp\(\): No such file or directory|spawn ENOENT/;
+		'Missing the Sass executable. Please install and make available on your PATH.';
 
-// incoming error
-  // Errors
-		// spawn: no sass executable -- hijack this one because the error doesn't mean much to most people
-		// matchNoSass
-
-		// Other errors that go through
-
-
-// message emission: Sass
-// message emission: Bundler
-
-
-{
-	sassLog: function () {}
-	sassErr: function () {}
-	bundleErr: function () {}
-	spawnErr: function () {}
-	rubyErr: function () {}
-}
+		// Any other errors
+	}
